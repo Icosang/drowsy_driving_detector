@@ -1,6 +1,27 @@
 import cv2
 import dlib
+import pygame
 from scipy.spatial import distance
+
+#check if alarm is on
+onalarm = False
+
+def sound_alarm(path) :
+    pygame.mixer.init()
+    pygame.mixer.music.load(path)
+    pygame.mixer.music.play()
+
+def init_message():
+    global onalarm
+
+    cv2.putText(frame, "Drowsy", (20, 100),
+                cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 4)
+    cv2.putText(frame, "Are you Sleepy?", (20, 400),
+                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 4)
+    print("Drowsy")
+    if onalarm == False :
+        onalarm = True
+        sound_alarm("alarm.mp3")
 
 def calculate_EAR(eye):
     A = distance.euclidean(eye[1], eye[5])
@@ -51,12 +72,6 @@ while True:
 
         EAR = (left_ear+right_ear)/2
         EAR = round(EAR,2)
-        if EAR<0.26:
-            cv2.putText(frame,"DROWSY",(20,100),
-                cv2.FONT_HERSHEY_SIMPLEX,3,(0,0,255),4)
-            cv2.putText(frame,"Are you Sleepy?",(20,400),
-                cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,255),4)
-            print("Drowsy")
 
 		# eye inclination check
         x1 = face_landmarks.part(39).x - face_landmarks.part(36).x
@@ -69,13 +84,13 @@ while True:
 
         incl = abs((incl1+incl2)/2)
 
-        if incl > 0.5:
-            cv2.putText(frame, "Incl Detection", (20, 100),
-                cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 4)
-            cv2.putText(frame, "Are you Sleepy?", (20, 400),
-                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 4)
-            print("Drowsy")
-        #print(EAR)
+        #alarm system
+        if EAR<0.26:
+            init_message()
+        elif incl > 0.5:
+            init_message()
+        else:
+            onalarm = False
 
     cv2.imshow("Are you Sleepy", frame)
 
