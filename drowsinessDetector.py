@@ -2,6 +2,7 @@ import cv2
 import dlib
 import pygame
 from scipy.spatial import distance
+import numpy as np
 
 #check if alarm is on
 onalarm = False
@@ -30,20 +31,50 @@ def calculate_EAR(eye):
     ear_aspect_ratio = (A+B)/(2.0*C)
     return ear_aspect_ratio
 
+def calculate_NOSE(nose):
+    # print(distance.euclidean(nose[0],nose[-1]))
+    return distance.euclidean(nose[0],nose[-1])
+def calculate_FACE(face):
+    # print(distance.euclidean(face[0],face[1]))
+    return distance.euclidean(face[0],face[-1])
+
 cap = cv2.VideoCapture(0)
 hog_face_detector = dlib.get_frontal_face_detector()
 dlib_facelandmark = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
+aver_nose_face = []
+nose_face = 0
 while True:
     _, frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
     faces = hog_face_detector(gray)
     for face in faces:
 
         face_landmarks = dlib_facelandmark(gray, face)
         leftEye = []
         rightEye = []
+        nose = []
+        face = []
+
+        #nose
+        x = face_landmarks.part(27).x
+        y = face_landmarks.part(27).y
+        nose.append((x, y))
+        x = face_landmarks.part(33).x
+        y = face_landmarks.part(33).y
+        nose.append((x, y))
+        #face
+        x = face_landmarks.part(27).x
+        y = face_landmarks.part(27).y
+        face.append((x, y))
+        x = face_landmarks.part(8).x
+        y = face_landmarks.part(8).y
+        face.append((x, y))
+        nose_face = calculate_NOSE(nose)/calculate_FACE(face)
+        if len(aver_nose_face)< 30:
+            aver_nose_face.append(nose_face)
+
+        average = np.mean(np.array(aver_nose_face))
 
         for n in range(36,42):
             x = face_landmarks.part(n).x
@@ -88,6 +119,8 @@ while True:
         if EAR<0.26:
             init_message()
         elif incl > 0.5:
+            init_message()
+        elif nose_face - average > 0.05:
             init_message()
         else:
             onalarm = False
