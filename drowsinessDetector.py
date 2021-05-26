@@ -2,6 +2,8 @@ import cv2
 import dlib
 import pygame
 from scipy.spatial import distance
+from datetime import datetime
+
 import numpy as np
 
 #check if alarm is on
@@ -19,7 +21,7 @@ def init_message():
                 cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 4)
     cv2.putText(frame, "Are you Sleepy?", (20, 400),
                 cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 4)
-    print("Drowsy")
+    # print("Drowsy")
     if onalarm == False :
         onalarm = True
         sound_alarm("alarm.mp3")
@@ -139,7 +141,7 @@ def judge_eyeglass(img):
         judge = True
     else:
         judge = False
-    print(judge)
+    # print(judge)
     return judge
 
 
@@ -149,6 +151,10 @@ dlib_facelandmark = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat"
 
 aver_nose_face = []
 nose_face = 0
+# 시간 측정을 위한 리스트
+EAR_time =[]
+incl_time =[]
+nose_face_time =[]
 
 #안경 예측
 predictor_path = "./data/shape_predictor_5_face_landmarks.dat"
@@ -249,28 +255,78 @@ while True:
             # cv2.imshow("aligned_face #{}".format(i + 1), aligned_face)
 
             judge = judge_eyeglass(aligned_face)
+            #judge 안경 유무
             if judge == True:
                 cv2.putText(frame, "With Glasses", (x_face + 100, y_face - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
                             (0, 255, 0), 2,
                             cv2.LINE_AA)
                 #alarm system
-                if EAR<0.20:
-                    init_message()
-                elif incl > 0.5:
-                    init_message()
-                elif nose_face - average > 0.05:
-                    init_message()
-                else:
+                # 눈부분
+                if EAR < 0.24:
+                    if len(EAR_time)>0:
+                        if (datetime.now()-EAR_time[0]).seconds > 1:
+                            init_message()
+                            print("EAR")
+                    else:
+                        EAR_time.append(datetime.now())
+                elif len(EAR_time)>0:
+                    EAR_time.pop()
+
+                if incl > 0.5:
+                    if len(incl_time) > 0:
+                        if (datetime.now() - incl_time[0]).seconds > 1:
+                            init_message()
+                            print("incl")
+                    else:
+                        incl_time.append(datetime.now())
+                elif len(incl_time) > 0:
+                    incl_time.pop()
+
+                if nose_face - average > 0.05:
+                    if len(nose_face_time) > 0:
+                        if (datetime.now() - nose_face_time[0]).seconds > 2:
+                            init_message()
+                            print("nose_face")
+                    else:
+                        nose_face_time.append(datetime.now())
+                elif len(nose_face_time) > 0:
+                    nose_face_time.pop()
+                if not(EAR<0.20) and not(incl > 0.5) and not(nose_face - average > 0.05):
                     onalarm = False
             else:
                 # alarm system
+                # 눈부분
                 if EAR < 0.26:
-                    init_message()
-                elif incl > 0.5:
-                    init_message()
-                elif nose_face - average > 0.05:
-                    init_message()
-                else:
+                    if len(EAR_time) > 0:
+                        if (datetime.now() - EAR_time[0]).seconds > 1:
+                            init_message()
+                            print("EAR")
+                    else:
+                        EAR_time.append(datetime.now())
+                elif len(EAR_time) > 0:
+                    EAR_time.pop()
+
+                if incl > 0.5:
+                    if len(incl_time) > 0:
+                        if (datetime.now() - incl_time[0]).seconds > 1:
+                            init_message()
+                            print("incl")
+
+                    else:
+                        incl_time.append(datetime.now())
+                elif len(incl_time) > 0:
+                    incl_time.pop()
+
+                if nose_face - average > 0.05:
+                    if len(nose_face_time) > 0:
+                        if (datetime.now() - nose_face_time[0]).seconds > 2:
+                            init_message()
+                            print("nose_face")
+                    else:
+                        nose_face_time.append(datetime.now())
+                elif len(nose_face_time) > 0:
+                    nose_face_time.pop()
+                if not (EAR < 0.20) and not (incl > 0.5) and not (nose_face - average > 0.05):
                     onalarm = False
 
     cv2.imshow("Are you Sleepy", frame)
