@@ -124,13 +124,13 @@ def judge_eyeglass(img):
     y_2 = np.int32(d * 8 / 7)
     h_2 = np.int32(d * 1 / 2)
 
-    roi_1 = thresh[y:y + h, x:x + w]  # 提取ROI
+    roi_1 = thresh[y:y + h, x:x + w]  
     roi_2_1 = thresh[y_2:y_2 + h_2, x_2_1:x_2_1 + w_2]
     roi_2_2 = thresh[y_2:y_2 + h_2, x_2_2:x_2_2 + w_2]
     roi_2 = np.hstack([roi_2_1, roi_2_2])
 
-    measure_1 = sum(sum(roi_1 / 255)) / (np.shape(roi_1)[0] * np.shape(roi_1)[1])  # 计算评价值
-    measure_2 = sum(sum(roi_2 / 255)) / (np.shape(roi_2)[0] * np.shape(roi_2)[1])  # 计算评价值
+    measure_1 = sum(sum(roi_1 / 255)) / (np.shape(roi_1)[0] * np.shape(roi_1)[1])  
+    measure_2 = sum(sum(roi_2 / 255)) / (np.shape(roi_2)[0] * np.shape(roi_2)[1]) 
     measure = measure_1 * 0.3 + measure_2 * 0.7
 
     # cv2.imshow('roi_1', roi_1)
@@ -144,8 +144,59 @@ def judge_eyeglass(img):
     # print(judge)
     return judge
 
+def getting_landmarks(im):
+    rects = detector(im, 1)
+
+    if len(rects) > 1:
+        return "error"
+    if len(rects) == 0:
+        return "error"
+    return np.matrix([[p.x, p.y] for p in predictor(im, rects[0]).parts()])
+
+def annotate_landmarks(im, landmarks):
+    im = im.copy()
+    for idx, point in enumerate(landmarks):
+        pos = (point[0, 0], point[0, 1])
+        cv2.putText(im, str(idx), pos, fontFace=cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, fontScale=0.4, color=(1, 2, 255))
+        cv2.circle(im, pos, 3, color=(0, 2, 2))
+    return im
+
+def top_lip(landmarks):
+    top_lip_pts = []
+    for i in range(50, 53):
+        top_lip_pts.append(landmarks[i])
+    for i in range(61, 64):
+        top_lip_pts.append(landmarks[i])
+    top_lip_all_pts = np.squeeze(np.asarray(top_lip_pts))
+    top_lip_mean = np.mean(top_lip_pts, axis=0)
+    return int(top_lip_mean[:, 1])
+
+def bottom_lip(landmarks):
+    bottom_lip_pts = []
+    for i in range(65, 68):
+        bottom_lip_pts.append(landmarks[i])
+    for i in range(56, 59):
+        bottom_lip_pts.append(landmarks[i])
+    bottom_lip_all_pts = np.squeeze(np.asarray(bottom_lip_pts))
+    bottom_lip_mean = np.mean(bottom_lip_pts, axis=0)
+    return int(bottom_lip_mean[:, 1])
+
+def mouth_open(image):
+    landmarks = getting_landmarks(image)
+
+    if landmarks == "error":
+        return image, 0
+
+    image_with_landmarks = annotate_landmarks(image, landmarks)
+    top_lip_center = top_lip(landmarks)
+    bottom_lip_center = bottom_lip(landmarks)
+    lip_distance = abs(top_lip_center - bottom_lip_center)
+    return image_with_landmarks, lip_distance
+
 
 cap = cv2.VideoCapture(0)
+yawns = 0
+yawn_status = False
 hog_face_detector = dlib.get_frontal_face_detector()
 dlib_facelandmark = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
@@ -157,7 +208,7 @@ incl_time =[]
 nose_face_time =[]
 
 #안경 예측
-predictor_path = "./data/shape_predictor_5_face_landmarks.dat"
+predictor_path = "shape_predictor_68_face_landmarks.dat"
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
 
@@ -165,14 +216,42 @@ while True:
     _, frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = hog_face_detector(gray)
-    for face in faces:
+    image_landmarks, lip_distance = mouth_open(frame)
 
+    prev_yawn_status = yawn_status
+
+    if lip_distance > 25:
+        yawn_status = True
+
+        cv2.putText(frame, "Yawning", (50, 450), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+
+        output_text = " Yawn Count : " + str(yawns + 1)
+
+        cv2.putText(frame, output_text, (50, 50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 127), 2)
+
+    else:
+        yawn_status = False
+
+    if prev_yawn_status == True and yawn_status == False:
+        yawns += 1
+    
+    cv2.imshow('Live Landmarks', image_landmarks)
+    cv2.imshow('Yawn Detection', frame)
+
+    if yawns == 5:
+        init_message()
+        yawns = 0
+
+
+    for face in faces:
         face_landmarks = dlib_facelandmark(gray, face)
         leftEye = []
         rightEye = []
         nose = []
         face = []
-
+        mouth = []
+        
+        # landmarks = predictor(gray, face)
         #nose
         x = face_landmarks.part(27).x
         y = face_landmarks.part(27).y
@@ -248,11 +327,12 @@ while True:
             landmarks = landmarks_to_np(landmarks)
             for (x, y) in landmarks:
                 cv2.circle(frame, (x, y), 2, (0, 0, 255), -1)
+                print((x,y))    
 
             LEFT_EYE_CENTER, RIGHT_EYE_CENTER = get_centers(frame, landmarks)
 
             aligned_face = get_aligned_face(gray, LEFT_EYE_CENTER, RIGHT_EYE_CENTER)
-            # cv2.imshow("aligned_face #{}".format(i + 1), aligned_face)
+            cv2.imshow("aligned_face #{}".format(i + 1), aligned_face)
 
             judge = judge_eyeglass(aligned_face)
             #judge 안경 유무
@@ -336,7 +416,6 @@ while True:
         break
 cap.release()
 cv2.destroyAllWindows()
-
 
 
 
