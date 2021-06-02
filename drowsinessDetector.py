@@ -354,7 +354,7 @@ while True:
 
                 if incl > 0.5:
                     if len(incl_time) > 0:
-                        if (datetime.now() - incl_time[0]).seconds > 1:
+                        if (datetime.now() - incl_time[0]).seconds > 2:
                             init_message()
                             print("incl")
                     else:
@@ -364,7 +364,7 @@ while True:
 
                 if nose_face - average > 0.05:
                     if len(nose_face_time) > 0:
-                        if (datetime.now() - nose_face_time[0]).seconds > 2:
+                        if (datetime.now() - nose_face_time[0]).seconds > 1:
                             init_message()
                             print("nose_face")
                     else:
@@ -388,7 +388,7 @@ while True:
 
                 if incl > 0.5:
                     if len(incl_time) > 0:
-                        if (datetime.now() - incl_time[0]).seconds > 1:
+                        if (datetime.now() - incl_time[0]).seconds > 2:
                             init_message()
                             print("incl")
 
@@ -399,7 +399,7 @@ while True:
 
                 if nose_face - average > 0.05:
                     if len(nose_face_time) > 0:
-                        if (datetime.now() - nose_face_time[0]).seconds > 2:
+                        if (datetime.now() - nose_face_time[0]).seconds > 1:
                             init_message()
                             print("nose_face")
                     else:
