@@ -1,6 +1,7 @@
 import cv2
 import dlib
 import pygame
+import time
 from scipy.spatial import distance
 from datetime import datetime
 
@@ -212,6 +213,9 @@ predictor_path = "shape_predictor_68_face_landmarks.dat"
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
 
+global yawn_start_time
+global yawn_finish_time
+
 while True:
     _, frame = cap.read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -220,7 +224,7 @@ while True:
 
     prev_yawn_status = yawn_status
 
-    if lip_distance > 25:
+    if lip_distance > 50:
         yawn_status = True
 
         cv2.putText(frame, "Yawning", (50, 450), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
@@ -238,8 +242,15 @@ while True:
     cv2.imshow('Live Landmarks', image_landmarks)
     cv2.imshow('Yawn Detection', frame)
 
+    if yawns == 1:
+        yawn_start_time = time.time()
+        # print(yawn_start_time)
+
     if yawns == 5:
-        init_message()
+        yawn_finish_time = time.time()
+        print(yawn_finish_time - yawn_start_time)
+        if yawn_finish_time - yawn_start_time == 120:
+            init_message()
         yawns = 0
 
 
@@ -327,7 +338,7 @@ while True:
             landmarks = landmarks_to_np(landmarks)
             for (x, y) in landmarks:
                 cv2.circle(frame, (x, y), 2, (0, 0, 255), -1)
-                print((x,y))    
+                # print((x,y))    
 
             LEFT_EYE_CENTER, RIGHT_EYE_CENTER = get_centers(frame, landmarks)
 
