@@ -226,11 +226,8 @@ while True:
 
     if lip_distance > 50:
         yawn_status = True
-
         cv2.putText(frame, "Yawning", (50, 450), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
-
         output_text = " Yawn Count : " + str(yawns + 1)
-
         cv2.putText(frame, output_text, (50, 50), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 127), 2)
 
     else:
@@ -244,12 +241,11 @@ while True:
 
     if yawns == 1:
         yawn_start_time = time.time()
-        # print(yawn_start_time)
 
     if yawns == 5:
         yawn_finish_time = time.time()
         print(yawn_finish_time - yawn_start_time)
-        if yawn_finish_time - yawn_start_time == 120:
+        if yawn_finish_time - yawn_start_time <= 120:
             init_message()
         yawns = 0
 
