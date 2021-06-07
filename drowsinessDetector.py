@@ -236,8 +236,8 @@ while True:
     if prev_yawn_status == True and yawn_status == False:
         yawns += 1
     
-    cv2.imshow('Live Landmarks', image_landmarks)
-    cv2.imshow('Yawn Detection', frame)
+    #cv2.imshow('Live Landmarks', image_landmarks)
+    #cv2.imshow('Yawn Detection', frame)
 
     if yawns == 1:
         yawn_start_time = time.time()
@@ -339,7 +339,7 @@ while True:
             LEFT_EYE_CENTER, RIGHT_EYE_CENTER = get_centers(frame, landmarks)
 
             aligned_face = get_aligned_face(gray, LEFT_EYE_CENTER, RIGHT_EYE_CENTER)
-            cv2.imshow("aligned_face #{}".format(i + 1), aligned_face)
+            #cv2.imshow("aligned_face #{}".format(i + 1), aligned_face)
 
             judge = judge_eyeglass(aligned_face)
             #judge 안경 유무
